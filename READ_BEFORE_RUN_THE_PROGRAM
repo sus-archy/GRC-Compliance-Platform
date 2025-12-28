@@ -1,0 +1,13 @@
+- This command to create the database of the app (u can do it inside the admin portal)
+
+    python seed.py --source Open_Source_CCF.xls \
+        --source-name "Adobe CCF" \
+        --source-short "CCF" \
+        --source-version "3.0" \
+        --force
+
+
+
+- Then run the app
+
+    streamlit run app.py

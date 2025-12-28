@@ -1,0 +1,103 @@
+controls:
+  ccf_id:
+    - "CCF ID"
+    - "Control ID"
+    - "control_id"
+    - "ID"
+    - "Ref"
+    - "Reference"
+  
+  domain:
+    - "Control Domain"
+    - "Domain"
+    - "Category"
+    - "control_domain"
+  
+  title:
+    - "Control Name"
+    - "Control Title"
+    - "Title"
+    - "Name"
+    - "control_name"
+  
+  description:
+    - "Control Description"
+    - "Description"
+    - "Desc"
+    - "Details"
+    - "control_description"
+  
+  type:
+    - "Control Type"
+    - "Type"
+    - "control_type"
+  
+  theme:
+    - "Control Theme"
+    - "Theme"
+    - "control_theme"
+  
+  guidance:
+    - "Control Implementation Guidance"
+    - "Implementation Guidance"
+    - "Guidance"
+    - "Implementation"
+    - "guidance"
+  
+  testing:
+    - "Control Testing Procedure"
+    - "Testing Procedure"
+    - "Testing"
+    - "Test Procedure"
+    - "Audit Procedure"
+    - "testing"
+  
+  artifacts:
+    - "Audit Artifacts"
+    - "Artifacts"
+    - "Evidence"
+    - "Evidence Refs"
+    - "Evidence References"
+    - "artifacts"
+
+evidence:
+  ref_id:
+    - "Reference #"
+    - "Reference"
+    - "ref_id"
+    - "Ref"
+    - "ID"
+    - "Evidence ID"
+    - "evidence_id"
+  
+  title:
+    - "Evidence Title"
+    - "Title"
+    - "Name"
+    - "Evidence Name"
+    - "evidence_title"
+  
+  domain:
+    - "Evidence Domain"
+    - "Domain"
+    - "Category"
+    - "evidence_domain"
+
+# Sheet name hints for Excel files
+sheets:
+  main:
+    - "CCF Open Source"
+    - "Controls"
+    - "Main"
+    - "CCF"
+  
+  guidance:
+    - "CCF Control Guidance"
+    - "Guidance"
+    - "Implementation"
+  
+  evidence:
+    - "Evidence Request List"
+    - "Evidence"
+    - "ERL"
+    - "Artifacts"
