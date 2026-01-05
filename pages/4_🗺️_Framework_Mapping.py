@@ -11,6 +11,7 @@ from utils.db import (
     get_all_compliance_sources
 )
 from utils.exporters import generate_framework_matrix
+from utils.security import escape_html, format_safe_source_badges
 
 st.set_page_config(page_title="Framework Mapping - GRC Platform", layout="wide", page_icon="🗺️")
 
@@ -131,10 +132,7 @@ def render_active_sources_banner(source_ids: list):
         if sources and source_ids:
             selected_sources = [s for s in sources if s['id'] in source_ids]
             if selected_sources:
-                badges = " ".join([
-                    f'<span class="source-badge">{s["short_name"] or s["name"]}</span>'
-                    for s in selected_sources
-                ])
+                badges = format_safe_source_badges(selected_sources)
                 st.markdown(f"""
                 <div style="margin-bottom: 1rem;">
                     <strong>📚 Active Frameworks:</strong> {badges}
@@ -224,8 +222,8 @@ def main():
     
     st.subheader("📊 Framework Overview")
     
-    # Display framework badges
-    frameworks_html = " ".join([f'<span class="framework-badge">{fw}</span>' for fw in frameworks])
+    # Display framework badges - escape framework names
+    frameworks_html = " ".join([f'<span class="framework-badge">{escape_html(fw)}</span>' for fw in frameworks])
     st.markdown(frameworks_html, unsafe_allow_html=True)
     
     st.markdown("---")
@@ -239,12 +237,16 @@ def main():
         cols = st.columns(num_cols)
         
         for i, (fw, stats) in enumerate(list(fw_stats.items())[:5]):
+            # Escape framework names and values
+            safe_fw = escape_html(fw)
+            safe_mapped = escape_html(str(stats['mapped_controls']))
+            safe_coverage = escape_html(f"{stats['coverage_pct']:.1f}")
             with cols[i]:
                 st.markdown(f"""
                 <div class="coverage-stat">
-                    <h3>{stats['mapped_controls']}</h3>
-                    <p>{fw}</p>
-                    <small>{stats['coverage_pct']:.1f}% coverage</small>
+                    <h3>{safe_mapped}</h3>
+                    <p>{safe_fw}</p>
+                    <small>{safe_coverage}% coverage</small>
                 </div>
                 """, unsafe_allow_html=True)
         

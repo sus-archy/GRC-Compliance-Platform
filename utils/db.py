@@ -5,10 +5,27 @@ import os
 from typing import Dict, List, Tuple, Optional, Any
 from contextlib import contextmanager
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_DB_NAME = "grc.db"
+
+# List of valid table names in our schema for security validation
+VALID_TABLE_NAMES = frozenset([
+    'compliance_sources', 'domains', 'evidence', 'controls',
+    'control_evidence', 'import_history'
+])
+
+# List of valid column names for security validation
+VALID_COLUMN_NAMES = frozenset([
+    'id', 'source_id', 'name', 'short_name', 'description', 'version',
+    'source_file', 'control_count', 'evidence_count', 'is_active', 'color',
+    'created_at', 'updated_at', 'ccf_id', 'domain_id', 'title', 'type',
+    'theme', 'guidance', 'testing', 'mappings', 'ref_id', 'domain',
+    'control_id', 'evidence_id', 'source_type', 'controls_imported',
+    'evidence_imported', 'domains_created', 'imported_at', 'notes'
+])
 
 # =============================================================================
 # DATABASE PATH & CONNECTION
@@ -921,12 +938,53 @@ def get_gap_analysis(db_path: str = None, source_ids: List[int] = None) -> Dict[
 # HELPER FUNCTIONS
 # =============================================================================
 
+def _validate_table_name(table: str) -> str:
+    """
+    Validate and sanitize a table name to prevent SQL injection.
+    
+    Args:
+        table: The table name to validate.
+        
+    Returns:
+        The validated table name if it's in the allowed list.
+        
+    Raises:
+        ValueError: If the table name is not in the allowed list.
+    """
+    if table not in VALID_TABLE_NAMES:
+        raise ValueError(f"Invalid table name: {table}")
+    return table
+
+
+def _validate_column_name(column: str) -> str:
+    """
+    Validate and sanitize a column name to prevent SQL injection.
+    
+    Args:
+        column: The column name to validate.
+        
+    Returns:
+        The validated column name if it's in the allowed list.
+        
+    Raises:
+        ValueError: If the column name is not in the allowed list.
+    """
+    if column not in VALID_COLUMN_NAMES:
+        raise ValueError(f"Invalid column name: {column}")
+    return column
+
+
 def _table_has_column(conn, table: str, column: str) -> bool:
     """Check if a table has a specific column."""
     try:
-        cursor = conn.execute(f"PRAGMA table_info({table})")
+        # Validate table name before using in query
+        validated_table = _validate_table_name(table)
+        cursor = conn.execute(f"PRAGMA table_info({validated_table})")
         columns = [row[1] for row in cursor.fetchall()]
         return column in columns
+    except ValueError:
+        # Invalid table name
+        return False
     except:
         return False
 

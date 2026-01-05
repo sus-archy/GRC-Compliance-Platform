@@ -4,3 +4,4 @@ plotly>=5.15.0
 openpyxl>=3.1.0
 xlrd>=2.0.0
 pyyaml>=6.0
+defusedxml>=0.7.0
