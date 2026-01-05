@@ -1,31 +1,6 @@
 # GRC Compliance Platform
 ## Comprehensive Project Documentation
 
----
-
-# Table of Contents
-
-1. [Introduction and Objectives](#1-introduction-and-objectives)
-2. [Theoretical Background](#2-theoretical-background-domain)
-3. [System Design and Architecture](#3-system-design-and-architecture)
-4. [Database Schema Reference](#4-database-schema-reference)
-5. [Module and File Reference](#5-module-and-file-reference)
-6. [Functional Walkthrough](#6-functional-walkthrough)
-7. [Data Import and Validation](#7-data-import-and-validation)
-8. [Exports and Reports](#8-exports-and-reports)
-9. [Screenshots and Sample Outputs](#9-screenshots-and-sample-outputs)
-10. [API and Function Reference](#10-api-and-function-reference)
-11. [Configuration Reference](#11-configuration-reference)
-12. [Installation and Setup](#12-installation-and-setup)
-13. [Usage Guide](#13-usage-guide)
-14. [Troubleshooting](#14-troubleshooting)
-15. [Limitations](#15-limitations)
-16. [Future Improvements](#16-future-improvements)
-17. [Glossary](#17-glossary)
-18. [Appendix](#18-appendix)
-
----
-
 # 1. Introduction and Objectives
 
 ## 1.1 Project Overview
