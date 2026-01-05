@@ -267,8 +267,9 @@ def sanitize_filename(filename: str) -> str:
     # Remove null bytes and other dangerous characters
     filename = filename.replace('\x00', '')
     
-    # Remove any leading/trailing dots (hidden files, parent dir)
-    filename = filename.strip('.')
+    # Remove leading dot to prevent hidden files, but only single leading dot
+    if filename.startswith('.'):
+        filename = filename.lstrip('.')
     
     # Replace any remaining problematic characters
     filename = re.sub(r'[<>:"/\\|?*]', '_', filename)

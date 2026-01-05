@@ -1027,13 +1027,26 @@ class ZIPAdapter(SourceAdapter):
         
         This prevents ZIP slip attacks where malicious archives contain
         paths like "../../../etc/passwd" to write outside the target directory.
+        Works on both Windows and Unix systems.
         """
+        # Normalize path separators for cross-platform compatibility
+        normalized_target = target_path.replace('\\', '/').replace('//', '/')
+        
+        # Check for obvious path traversal patterns before resolving
+        if '..' in normalized_target:
+            return False
+        
         # Resolve to absolute paths
         abs_base = os.path.abspath(base_path)
         abs_target = os.path.abspath(os.path.join(base_path, target_path))
         
-        # Check that the target is within the base
-        return abs_target.startswith(abs_base + os.sep) or abs_target == abs_base
+        # Use commonpath for robust cross-platform validation
+        try:
+            common = os.path.commonpath([abs_base, abs_target])
+            return common == abs_base
+        except ValueError:
+            # On Windows, commonpath raises ValueError if paths are on different drives
+            return False
     
     def _safe_extract(self, zf: zipfile.ZipFile, target_dir: str) -> None:
         """
@@ -1086,8 +1099,8 @@ class ZIPAdapter(SourceAdapter):
                 report['info'].append(f"ZIP contains {len(file_list)} files")
                 
                 # Security check: validate all paths using the robust _is_safe_path method
-                # Create a temp-like base for validation purposes
-                temp_base = "/tmp/validation_base"
+                # Create a cross-platform temp-like base for validation purposes
+                temp_base = os.path.join(tempfile.gettempdir(), 'validation_base')
                 for member in file_list:
                     # Use the robust path safety check that handles edge cases
                     if not self._is_safe_path(temp_base, member):
