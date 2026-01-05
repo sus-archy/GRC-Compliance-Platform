@@ -1085,10 +1085,12 @@ class ZIPAdapter(SourceAdapter):
                 file_list = zf.namelist()
                 report['info'].append(f"ZIP contains {len(file_list)} files")
                 
-                # Security check: validate all paths before extraction
+                # Security check: validate all paths using the robust _is_safe_path method
+                # Create a temp-like base for validation purposes
+                temp_base = "/tmp/validation_base"
                 for member in file_list:
-                    # Check for path traversal attempts
-                    if '..' in member or member.startswith('/'):
+                    # Use the robust path safety check that handles edge cases
+                    if not self._is_safe_path(temp_base, member):
                         report['valid'] = False
                         report['errors'].append(f"ZIP contains potentially unsafe path: {member}")
                         return report

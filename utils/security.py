@@ -6,6 +6,7 @@ security vulnerabilities like XSS (Cross-Site Scripting).
 """
 
 import html
+import os
 import re
 from typing import Optional, Union
 
@@ -261,7 +262,6 @@ def sanitize_filename(filename: str) -> str:
         return ""
     
     # Get just the filename, removing any path components
-    import os
     filename = os.path.basename(str(filename))
     
     # Remove null bytes and other dangerous characters
