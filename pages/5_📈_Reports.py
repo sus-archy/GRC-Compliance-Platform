@@ -16,6 +16,7 @@ from utils.exporters import (
     export_to_csv, export_to_json, export_to_excel,
     generate_compliance_report, export_gap_analysis
 )
+from utils.security import escape_html, format_safe_source_badges
 
 st.set_page_config(page_title="Reports - GRC Platform", layout="wide", page_icon="📈")
 
@@ -155,10 +156,7 @@ def render_active_sources_banner(source_ids: list):
         if sources and source_ids:
             selected_sources = [s for s in sources if s['id'] in source_ids]
             if selected_sources:
-                badges = " ".join([
-                    f'<span class="source-badge">{s["short_name"] or s["name"]}</span>'
-                    for s in selected_sources
-                ])
+                badges = format_safe_source_badges(selected_sources)
                 st.markdown(f"""
                 <div style="margin-bottom: 1rem;">
                     <strong>📚 Active Frameworks:</strong> {badges}
@@ -229,13 +227,20 @@ def main():
     
     summary = generate_executive_summary(source_ids if source_ids else None)
     
+    # Escape all summary values for safe HTML display
+    safe_score = escape_html(f"{summary['compliance_score']:.0f}%")
+    safe_controls = escape_html(str(summary['overview']['controls']))
+    total_gaps = summary['gaps']['missing_guidance'] + summary['gaps']['missing_evidence']
+    safe_gaps = escape_html(str(total_gaps))
+    safe_frameworks = escape_html(str(summary['overview']['frameworks']))
+    
     # Summary metrics
     sum_col1, sum_col2, sum_col3, sum_col4 = st.columns(4)
     
     with sum_col1:
         st.markdown(f"""
         <div class="summary-box">
-            <h2>{summary['compliance_score']:.0f}%</h2>
+            <h2>{safe_score}</h2>
             <p>Compliance Score</p>
         </div>
         """, unsafe_allow_html=True)
@@ -243,16 +248,15 @@ def main():
     with sum_col2:
         st.markdown(f"""
         <div class="summary-box" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-            <h2>{summary['overview']['controls']}</h2>
+            <h2>{safe_controls}</h2>
             <p>Total Controls</p>
         </div>
         """, unsafe_allow_html=True)
     
     with sum_col3:
-        total_gaps = summary['gaps']['missing_guidance'] + summary['gaps']['missing_evidence']
         st.markdown(f"""
         <div class="summary-box" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-            <h2>{total_gaps}</h2>
+            <h2>{safe_gaps}</h2>
             <p>Total Gaps</p>
         </div>
         """, unsafe_allow_html=True)
@@ -260,7 +264,7 @@ def main():
     with sum_col4:
         st.markdown(f"""
         <div class="summary-box" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-            <h2>{summary['overview']['frameworks']}</h2>
+            <h2>{safe_frameworks}</h2>
             <p>Frameworks</p>
         </div>
         """, unsafe_allow_html=True)

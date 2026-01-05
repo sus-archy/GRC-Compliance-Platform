@@ -12,6 +12,7 @@ from utils.db import (
     get_all_domains, get_all_control_types, get_all_themes, get_all_frameworks,
     get_all_compliance_sources
 )
+from utils.security import escape_html, format_safe_source_badges, format_safe_html_box
 
 st.set_page_config(page_title="Controls Browser - GRC Platform", layout="wide", page_icon="🔍")
 
@@ -182,10 +183,7 @@ def render_active_sources_banner(source_ids: list):
         if sources and source_ids:
             selected_sources = [s for s in sources if s['id'] in source_ids]
             if selected_sources:
-                badges = " ".join([
-                    f'<span class="source-badge">{s["short_name"] or s["name"]}</span>'
-                    for s in selected_sources
-                ])
+                badges = format_safe_source_badges(selected_sources)
                 st.markdown(f"""
                 <div style="margin-bottom: 1rem;">
                     <strong>📚 Active Frameworks:</strong> {badges}
@@ -196,12 +194,17 @@ def render_active_sources_banner(source_ids: list):
 
 
 def highlight_text(text: str, search_term: str) -> str:
-    """Highlight search terms in text."""
+    """Highlight search terms in text with safe HTML escaping."""
     if not text or not search_term:
-        return text or ""
+        return escape_html(text) if text else ""
     
-    pattern = re.compile(f'({re.escape(search_term)})', re.IGNORECASE)
-    return pattern.sub(r'<span class="search-highlight">\1</span>', text)
+    # First escape the text to prevent XSS
+    safe_text = escape_html(text)
+    safe_search = escape_html(search_term)
+    
+    # Now apply highlighting to the escaped text
+    pattern = re.compile(f'({re.escape(safe_search)})', re.IGNORECASE)
+    return pattern.sub(r'<span class="search-highlight">\1</span>', safe_text)
 
 
 def render_control_card(control: dict, search_term: str = None, expanded: bool = False):
@@ -215,31 +218,41 @@ def render_control_card(control: dict, search_term: str = None, expanded: bool =
     evidence_count = control.get('evidence_count', 0)
     source_name = control.get('source_short') or control.get('source_name', '')
     
-    # Highlight search terms
-    if search_term:
-        title = highlight_text(title, search_term)
-        description = highlight_text(description, search_term)
+    # Escape all user content for safe display
+    safe_ccf_id = escape_html(ccf_id)
+    safe_domain = escape_html(domain)
+    safe_source_name = escape_html(source_name)
+    safe_ctrl_type = escape_html(ctrl_type)
+    safe_theme = escape_html(theme)
     
-    # Build header with source badge if available
-    header = f"**{ccf_id}** — {title}"
+    # Highlight search terms (highlight_text already escapes content)
+    if search_term:
+        title_display = highlight_text(title, search_term)
+        description_display = highlight_text(description, search_term)
+    else:
+        title_display = escape_html(title)
+        description_display = escape_html(description)
+    
+    # Build header with source badge if available (for expander label, no HTML)
+    header = f"**{safe_ccf_id}** — {escape_html(title)}"
     if source_name:
-        header = f"**{ccf_id}** [{source_name}] — {title}"
+        header = f"**{safe_ccf_id}** [{safe_source_name}] — {escape_html(title)}"
     
     with st.expander(header, expanded=expanded):
         col1, col2 = st.columns([3, 1])
         
         with col1:
-            st.markdown(f"**Domain:** {domain}")
-            st.markdown(f"**Description:** {description}", unsafe_allow_html=True)
+            st.markdown(f"**Domain:** {safe_domain}")
+            st.markdown(f"**Description:** {description_display}", unsafe_allow_html=True)
             
-            # Tags
+            # Tags - all content is escaped
             tags_html = ""
             if source_name:
-                tags_html += f'<span class="tag tag-source">{source_name}</span>'
+                tags_html += f'<span class="tag tag-source">{safe_source_name}</span>'
             if ctrl_type:
-                tags_html += f'<span class="tag tag-type">{ctrl_type}</span>'
+                tags_html += f'<span class="tag tag-type">{safe_ctrl_type}</span>'
             if theme:
-                tags_html += f'<span class="tag tag-theme">{theme}</span>'
+                tags_html += f'<span class="tag tag-theme">{safe_theme}</span>'
             
             if tags_html:
                 st.markdown(tags_html, unsafe_allow_html=True)
@@ -261,14 +274,23 @@ def render_control_detail(ccf_id: str):
         st.error("Control not found")
         return
     
+    # Escape all user content
+    safe_ccf_id = escape_html(control.get('ccf_id', ''))
+    safe_title = escape_html(control.get('title', ''))
+    safe_source_name = escape_html(control.get('source_name', ''))
+    safe_domain_name = escape_html(control.get('domain_name') or 'Not specified')
+    safe_type = escape_html(control.get('type') or 'Not specified')
+    safe_theme = escape_html(control.get('theme') or 'Not specified')
+    safe_description = escape_html(control.get('description') or 'No description available.')
+    
     # Header
     col1, col2 = st.columns([4, 1])
     with col1:
-        st.markdown(f"## {control['ccf_id']}")
-        st.markdown(f"### {control['title']}")
+        st.markdown(f"## {safe_ccf_id}")
+        st.markdown(f"### {safe_title}")
         # Show source if available
         if control.get('source_name'):
-            st.caption(f"📚 Framework: **{control['source_name']}**")
+            st.caption(f"📚 Framework: **{safe_source_name}**")
     with col2:
         if st.button("← Back to List", use_container_width=True):
             st.session_state.show_detail = False
@@ -278,19 +300,19 @@ def render_control_detail(ccf_id: str):
     meta_col1, meta_col2, meta_col3, meta_col4 = st.columns(4)
     
     with meta_col1:
-        st.markdown(f"**Domain**")
-        st.info(control.get('domain_name') or 'Not specified')
+        st.markdown("**Domain**")
+        st.info(safe_domain_name)
     
     with meta_col2:
-        st.markdown(f"**Type**")
-        st.info(control.get('type') or 'Not specified')
+        st.markdown("**Type**")
+        st.info(safe_type)
     
     with meta_col3:
-        st.markdown(f"**Theme**")
-        st.info(control.get('theme') or 'Not specified')
+        st.markdown("**Theme**")
+        st.info(safe_theme)
     
     with meta_col4:
-        st.markdown(f"**Evidence Items**")
+        st.markdown("**Evidence Items**")
         evidence = control.get('evidence', [])
         st.info(len(evidence))
     
@@ -298,7 +320,7 @@ def render_control_detail(ccf_id: str):
     
     # Description
     st.markdown("### Description")
-    st.write(control.get('description') or 'No description available.')
+    st.write(safe_description)
     
     st.markdown("---")
     
@@ -308,22 +330,16 @@ def render_control_detail(ccf_id: str):
     with tab1:
         guidance = control.get('guidance')
         if guidance:
-            st.markdown(f"""
-            <div class="guidance-box">
-                {guidance}
-            </div>
-            """, unsafe_allow_html=True)
+            # Use the safe HTML box formatter
+            st.markdown(format_safe_html_box(guidance, "guidance-box"), unsafe_allow_html=True)
         else:
             st.info("No implementation guidance available for this control.")
     
     with tab2:
         testing = control.get('testing')
         if testing:
-            st.markdown(f"""
-            <div class="testing-box">
-                {testing}
-            </div>
-            """, unsafe_allow_html=True)
+            # Use the safe HTML box formatter
+            st.markdown(format_safe_html_box(testing, "testing-box"), unsafe_allow_html=True)
         else:
             st.info("No testing procedure available for this control.")
     
@@ -334,9 +350,9 @@ def render_control_detail(ccf_id: str):
             for framework, refs in mappings.items():
                 if isinstance(refs, list):
                     for ref in refs:
-                        rows.append({'Framework': framework, 'Reference': ref})
+                        rows.append({'Framework': escape_html(framework), 'Reference': escape_html(ref)})
                 else:
-                    rows.append({'Framework': framework, 'Reference': str(refs)})
+                    rows.append({'Framework': escape_html(framework), 'Reference': escape_html(str(refs))})
             
             if rows:
                 mappings_df = pd.DataFrame(rows)
@@ -344,7 +360,7 @@ def render_control_detail(ccf_id: str):
                 
                 st.markdown("**Frameworks:**")
                 frameworks_html = " ".join([
-                    f'<span class="tag tag-framework">{fw}</span>'
+                    f'<span class="tag tag-framework">{escape_html(fw)}</span>'
                     for fw in mappings.keys()
                 ])
                 st.markdown(frameworks_html, unsafe_allow_html=True)

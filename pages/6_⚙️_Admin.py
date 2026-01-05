@@ -13,6 +13,7 @@ from utils.db import (
     get_all_compliance_sources, update_compliance_source,
     delete_compliance_source, toggle_compliance_source
 )
+from utils.security import escape_html, sanitize_filename
 
 st.set_page_config(page_title="Admin - GRC Platform", layout="wide", page_icon="⚙️")
 
@@ -184,17 +185,19 @@ def save_uploaded_file(uploaded_file):
         if 'temp_dir' not in st.session_state or not os.path.exists(st.session_state.get('temp_dir', '')):
             st.session_state.temp_dir = tempfile.mkdtemp(prefix='grc_upload_')
         
-        temp_path = os.path.join(st.session_state.temp_dir, uploaded_file.name)
+        # Sanitize the filename to prevent path traversal attacks
+        safe_filename = sanitize_filename(uploaded_file.name)
+        temp_path = os.path.join(st.session_state.temp_dir, safe_filename)
         
         with open(temp_path, 'wb') as f:
             f.write(uploaded_file.getbuffer())
         
         st.session_state.temp_path = temp_path
-        st.session_state.uploaded_filename = uploaded_file.name
+        st.session_state.uploaded_filename = safe_filename
         
         return temp_path
     except Exception as e:
-        st.error(f"Error saving file: {e}")
+        st.error(f"Error saving file: {escape_html(str(e))}")
         return None
 
 

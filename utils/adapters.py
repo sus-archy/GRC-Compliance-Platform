@@ -1021,6 +1021,52 @@ class ZIPAdapter(SourceAdapter):
         self._primary_file = None
         self._adapter_type = None
     
+    def _is_safe_path(self, base_path: str, target_path: str) -> bool:
+        """
+        Check if a path is safe (doesn't escape the base directory).
+        
+        This prevents ZIP slip attacks where malicious archives contain
+        paths like "../../../etc/passwd" to write outside the target directory.
+        """
+        # Resolve to absolute paths
+        abs_base = os.path.abspath(base_path)
+        abs_target = os.path.abspath(os.path.join(base_path, target_path))
+        
+        # Check that the target is within the base
+        return abs_target.startswith(abs_base + os.sep) or abs_target == abs_base
+    
+    def _safe_extract(self, zf: zipfile.ZipFile, target_dir: str) -> None:
+        """
+        Safely extract a ZIP file, preventing ZIP slip attacks.
+        
+        Args:
+            zf: The ZipFile object to extract from.
+            target_dir: The directory to extract to.
+            
+        Raises:
+            ValueError: If a malicious path is detected.
+        """
+        for member in zf.namelist():
+            # Skip directories
+            if member.endswith('/'):
+                continue
+            
+            # Check for path traversal attempts
+            if not self._is_safe_path(target_dir, member):
+                raise ValueError(f"ZIP contains potentially malicious path: {member}")
+            
+            # Extract the file safely
+            target_path = os.path.join(target_dir, member)
+            target_parent = os.path.dirname(target_path)
+            
+            # Create parent directories if needed
+            if target_parent and not os.path.exists(target_parent):
+                os.makedirs(target_parent, exist_ok=True)
+            
+            # Extract the file
+            with zf.open(member) as source, open(target_path, 'wb') as target:
+                target.write(source.read())
+    
     def validate(self) -> Dict[str, Any]:
         report = {
             'valid': True,
@@ -1038,6 +1084,14 @@ class ZIPAdapter(SourceAdapter):
             with zipfile.ZipFile(self.path, 'r') as zf:
                 file_list = zf.namelist()
                 report['info'].append(f"ZIP contains {len(file_list)} files")
+                
+                # Security check: validate all paths before extraction
+                for member in file_list:
+                    # Check for path traversal attempts
+                    if '..' in member or member.startswith('/'):
+                        report['valid'] = False
+                        report['errors'].append(f"ZIP contains potentially unsafe path: {member}")
+                        return report
                 
                 # Categorize files
                 excel_files = [f for f in file_list if f.lower().endswith(('.xls', '.xlsx')) and not f.startswith('__MACOSX')]
@@ -1090,7 +1144,8 @@ class ZIPAdapter(SourceAdapter):
         
         try:
             with zipfile.ZipFile(self.path, 'r') as zf:
-                zf.extractall(self._temp_dir)
+                # Use safe extraction to prevent ZIP slip attacks
+                self._safe_extract(zf, self._temp_dir)
             
             # Create appropriate adapter
             if self._adapter_type == 'excel':

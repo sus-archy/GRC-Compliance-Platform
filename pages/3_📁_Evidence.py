@@ -6,6 +6,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.db import db_exists, get_all_evidence, get_connection, get_all_compliance_sources
+from utils.security import escape_html, format_safe_source_badges
 
 st.set_page_config(page_title="Evidence Tracker - GRC Platform", layout="wide", page_icon="📁")
 
@@ -121,10 +122,7 @@ def render_active_sources_banner(source_ids: list):
         if sources and source_ids:
             selected_sources = [s for s in sources if s['id'] in source_ids]
             if selected_sources:
-                badges = " ".join([
-                    f'<span class="source-badge">{s["short_name"] or s["name"]}</span>'
-                    for s in selected_sources
-                ])
+                badges = format_safe_source_badges(selected_sources)
                 st.markdown(f"""
                 <div style="margin-bottom: 1rem;">
                     <strong>📚 Active Frameworks:</strong> {badges}
@@ -338,12 +336,18 @@ def main():
     # -----------------------
     stats = get_evidence_stats(source_ids if source_ids else None)
     
+    # Escape stats values
+    safe_total = escape_html(str(stats['total']))
+    safe_linked = escape_html(str(stats['linked']))
+    safe_orphan = escape_html(str(stats['orphan']))
+    safe_domains = escape_html(str(stats['domains']))
+    
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.markdown(f"""
         <div class="stat-box">
-            <h2>{stats['total']}</h2>
+            <h2>{safe_total}</h2>
             <p>Total Evidence Items</p>
         </div>
         """, unsafe_allow_html=True)
@@ -351,7 +355,7 @@ def main():
     with col2:
         st.markdown(f"""
         <div class="stat-box" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-            <h2>{stats['linked']}</h2>
+            <h2>{safe_linked}</h2>
             <p>Linked to Controls</p>
         </div>
         """, unsafe_allow_html=True)
@@ -359,7 +363,7 @@ def main():
     with col3:
         st.markdown(f"""
         <div class="stat-box" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-            <h2>{stats['orphan']}</h2>
+            <h2>{safe_orphan}</h2>
             <p>Orphan Evidence</p>
         </div>
         """, unsafe_allow_html=True)
@@ -367,7 +371,7 @@ def main():
     with col4:
         st.markdown(f"""
         <div class="stat-box" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-            <h2>{stats['domains']}</h2>
+            <h2>{safe_domains}</h2>
             <p>Evidence Domains</p>
         </div>
         """, unsafe_allow_html=True)

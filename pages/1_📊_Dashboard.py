@@ -13,6 +13,7 @@ from utils.db import (
     get_domain_stats, get_all_frameworks, get_framework_coverage,
     get_all_compliance_sources
 )
+from utils.security import escape_html, format_safe_source_badges
 
 st.set_page_config(page_title="Dashboard - GRC Platform", layout="wide", page_icon="📊")
 
@@ -128,11 +129,13 @@ def render_source_selector_sidebar():
 
 
 def render_metric_card(value, label, color_start="#667eea", color_end="#764ba2"):
-    """Render a styled metric card."""
+    """Render a styled metric card with escaped values."""
+    safe_value = escape_html(str(value))
+    safe_label = escape_html(str(label))
     st.markdown(f"""
     <div class="metric-container" style="background: linear-gradient(135deg, {color_start} 0%, {color_end} 100%);">
-        <p class="metric-value">{value}</p>
-        <p class="metric-label">{label}</p>
+        <p class="metric-value">{safe_value}</p>
+        <p class="metric-label">{safe_label}</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -144,10 +147,7 @@ def render_active_sources_banner(source_ids: list):
         if sources and source_ids:
             selected_sources = [s for s in sources if s['id'] in source_ids]
             if selected_sources:
-                badges = " ".join([
-                    f'<span class="source-badge">{s["short_name"] or s["name"]}</span>'
-                    for s in selected_sources
-                ])
+                badges = format_safe_source_badges(selected_sources)
                 st.markdown(f"""
                 <div style="margin-bottom: 1rem;">
                     <strong>📚 Active Frameworks:</strong> {badges}

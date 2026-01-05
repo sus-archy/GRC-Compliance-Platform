@@ -6,6 +6,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from utils.db import get_db_path, db_exists
+from utils.security import escape_html, format_safe_source_badges, format_safe_html_metric
 
 # -----------------------
 # Page Configuration
@@ -377,7 +378,8 @@ def main():
     if sources:
         selected_names = [s['short_name'] or s['name'] for s in sources if s['id'] in source_ids]
         if selected_names:
-            badges = " ".join([f'<span class="source-badge source-active">{name}</span>' for name in selected_names])
+            selected_sources = [s for s in sources if s['id'] in source_ids]
+            badges = format_safe_source_badges(selected_sources)
             st.markdown(f"""
             <div style="margin-bottom: 1rem;">
                 <strong>📚 Active Frameworks:</strong> {badges}
@@ -394,10 +396,16 @@ def main():
     
     col1, col2, col3, col4, col5 = st.columns(5)
     
+    # Escape stats values before displaying in HTML
+    safe_controls = escape_html(str(stats['controls']))
+    safe_domains = escape_html(str(stats['domains']))
+    safe_evidence = escape_html(str(stats['evidence']))
+    safe_frameworks = escape_html(str(stats['frameworks']))
+    
     with col1:
         st.markdown(f"""
         <div class="metric-card">
-            <h3>{stats['controls']}</h3>
+            <h3>{safe_controls}</h3>
             <p>Total Controls</p>
         </div>
         """, unsafe_allow_html=True)
@@ -405,7 +413,7 @@ def main():
     with col2:
         st.markdown(f"""
         <div class="metric-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-            <h3>{stats['domains']}</h3>
+            <h3>{safe_domains}</h3>
             <p>Domains</p>
         </div>
         """, unsafe_allow_html=True)
@@ -413,7 +421,7 @@ def main():
     with col3:
         st.markdown(f"""
         <div class="metric-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-            <h3>{stats['evidence']}</h3>
+            <h3>{safe_evidence}</h3>
             <p>Evidence Items</p>
         </div>
         """, unsafe_allow_html=True)
@@ -421,16 +429,17 @@ def main():
     with col4:
         st.markdown(f"""
         <div class="metric-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-            <h3>{stats['frameworks']}</h3>
+            <h3>{safe_frameworks}</h3>
             <p>Frameworks</p>
         </div>
         """, unsafe_allow_html=True)
     
     with col5:
         coverage = stats.get('coverage_pct', 0)
+        safe_coverage = escape_html(f"{coverage:.0f}%")
         st.markdown(f"""
         <div class="metric-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-            <h3>{coverage:.0f}%</h3>
+            <h3>{safe_coverage}</h3>
             <p>Evidence Coverage</p>
         </div>
         """, unsafe_allow_html=True)
