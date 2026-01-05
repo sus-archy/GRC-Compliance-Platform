@@ -5,7 +5,7 @@ import re
 import zipfile
 import tempfile
 import logging
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 import unicodedata
 from abc import ABC, abstractmethod
 from typing import Dict, Tuple, List, Optional, Any
